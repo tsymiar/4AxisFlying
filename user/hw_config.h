@@ -37,8 +37,14 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
-/* Exported define -----------------------------------------------------------*/
 #define CURSOR_STEP     20
+/* Exported define -----------------------------------------------------------*/
+#define Red 9
+#define Orange 10
+#define Green 11
+#define Blue 12
+#define LED_ON 1
+#define LED_OFF 0
 
 /* Exported functions ------------------------------------------------------- */
 void Set_System(void);
@@ -49,8 +55,8 @@ void Leave_LowPowerMode(void);
 void USB_Interrupts_Config(void);
 void USB_Cable_Config (FunctionalState NewState);
 void Joystick_Send(uint8_t Keys, USART_TypeDef * USARTn);
-uint8_t JoyState(void);
 void Get_SerialNum(void);
+uint8_t JoyState(void);
 
 
 #endif  /*__HW_CONFIG_H*/

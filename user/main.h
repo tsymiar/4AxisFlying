@@ -30,10 +30,10 @@
 #define __MAIN_H
 
 /* Includes ------------------------------------------------------------------*/
-#include "string.h"
-#include "stdarg.h"	
-#include "common_functions.h"
-#include "pwm_set.h"
+#include "func_utils.h"
+#include "math_clac.h"
+#include "custom_function.h"
+#include "PWM_set.h"
 #include "HC05_set.h"
 /* Exported functions ------------------------------------------------------- */
 #endif /* __MAIN_H */

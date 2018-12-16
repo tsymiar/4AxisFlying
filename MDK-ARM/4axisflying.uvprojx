@@ -629,19 +629,24 @@
           <GroupName>user</GroupName>
           <Files>
             <File>
-              <FileName>common_functions.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\user\common_functions.c</FilePath>
-            </File>
-            <File>
-              <FileName>HC05_set.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\user\HC05_set.c</FilePath>
-            </File>
-            <File>
               <FileName>hw_config.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\user\hw_config.c</FilePath>
+            </File>
+            <File>
+              <FileName>func_utils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\func_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>math_clac.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\math_clac.c</FilePath>
+            </File>
+            <File>
+              <FileName>custom_function.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\custom_function.c</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>
@@ -649,14 +654,14 @@
               <FilePath>..\user\main.c</FilePath>
             </File>
             <File>
-              <FileName>math_compute.c</FileName>
+              <FileName>PWM_set.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\user\math_compute.c</FilePath>
+              <FilePath>..\user\PWM_set.c</FilePath>
             </File>
             <File>
-              <FileName>pwm_set.c</FileName>
+              <FileName>HC05_set.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\user\pwm_set.c</FilePath>
+              <FilePath>..\user\HC05_set.c</FilePath>
             </File>
             <File>
               <FileName>ESP8266_set.c</FileName>

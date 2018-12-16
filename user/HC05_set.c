@@ -1,63 +1,23 @@
 #include "HC05_set.h"
 
-u8  TX_BUF[256];
-u8  RX_BUF[256];
+#define BITBAND(addr, bitnum) ((addr & 0xF0000000)+0x2000000+((addr &0xFFFFF)<<5)+(bitnum<<2)) 
+#define MEM_ADDR(addr)  *((volatile unsigned long  *)(addr)) 
+#define BIT_ADDR(addr, bitnum)   MEM_ADDR(BITBAND(addr, bitnum)) 
+#define HC05_LED  	BIT_ADDR(GPIOC_BASE+8,5)		
+#define HC05_KEY  	BIT_ADDR(GPIOC_BASE+12,4)		
 
 u16 RX_STA = 0;
+u8  RX_BUF[256];
+void BT_Usart2_Config(uint32_t rate);
+extern void Lamp_CatchSignal(u8 color, u8 state);
 
 /*GPIOA, USART2, DMA1, Channel7, PA4-TX, PA5-RX*/
-
-#if 1
-#pragma import(__use_no_semihosting)             
-//necssary functions standard library needed.
-struct __FILE 
-{ 
-	int handle; 
-	/* Whatever you require here. If the only file you are using is */ 
-	/* standard output using printf() for debugging, no file handling */ 
-	/* is required. */ 
-}; 
-/* FILE is typedef¡¯ d in stdio.h. */ 
-FILE __stdout;       
-//define function _sys_exit() to avert half-host mode.
-void _sys_exit(int x) 
-{ 
-	x = x; 
-} 
-#endif
-
-/**
-  * @brief  serial port 2, Override function printf.
-  * @param  fmt,...ensure every time data sent in length of 200.
-  * @retval None
-  */
-void u2_printf(char* fmt,...)  
-{  
-	va_list ap;
-	va_start(ap,fmt);
-	vsprintf((char*)TX_BUF,fmt,ap);
-	va_end(ap);
-	while(DMA1_Channel7->CNDTR!=0);	//waiting if channel 7 finished transportion.   
-	DMA_Config(DMA1_Channel7, (uint32_t)TX_BUF, strlen((const char*)TX_BUF)); 	//via DMA.
-}
 
 u8 HC05_Init(void)
 {
 	u8 retry=10,t;
 	u8 temp=1;
-	USART_InitTypeDef Init_USART2;
-	RCC->APB2ENR |= 1<<4;    	//enable PORT clock 	
- 	GPIOA->PUPDR &= 0xFF00FFFF;		/*????????????????*/
-	GPIOA->PUPDR |= 0x00830000; 
-	GPIOA->IDR |= 1<<5; 		//PA5 pull-up, output
-	Init_USART2.USART_BaudRate = 38400;		//baud rate my hc-05 supported.
-	Init_USART2.USART_WordLength = USART_WordLength_8b;
-	Init_USART2.USART_StopBits = USART_StopBits_1;
-	Init_USART2.USART_Parity = USART_Parity_No;
-	Init_USART2.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-	Init_USART2.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-	USART_Init(USART2, &Init_USART2);
-	USART_Cmd(USART2, ENABLE);			//USART2 Init 38400 baud rate.
+	BT_Usart2_Config(38400);	//baud rate my hc-05 supported.
 	while(retry--)
 	{
 		HC05_KEY=1;					//set KEY high to enable AT mode.
@@ -74,7 +34,7 @@ u8 HC05_Init(void)
 		{
 			temp=RX_STA&0x7FFF;	//get the lenth of the data recieved.
 			RX_STA=0;			 
-			if(temp==4&&RX_BUF[0]=='O'&&RX_BUF[1]=='K')
+			if(temp==4 && RX_BUF[0]=='O' && RX_BUF[1]=='K')
 			{
 				temp=0;//recieved OK.
 				break;
@@ -134,7 +94,7 @@ u8 HC05_Set_Cmd(u8* atstr)
 	{
 		HC05_KEY=1;
 		Delay(10);
-		u2_printf("%s\r\n",atstr);
+		u2_printf("BT:%x\r\n",atstr);
 		HC05_KEY=0;
 		for(t=0;t<20;t++)
 		{
@@ -188,15 +148,20 @@ void HC05_debug(u8 *str)
 	* @param  rate, baudrate has setted on AT mode; addr,  the memory base address; leng, the length of data you want to send.
   * @retval None.
   */
-void BT_Usart2_Config(uint32_t rate, uint32_t addr, uint8_t leng)
+void BT_Usart2_Config(uint32_t rate)
 {
-			USART_InitTypeDef USART_InitStructure;
+			USART_InitTypeDef BT_USART2; //
 			GPIO_InitTypeDef GPIO_InitStructure;
 			DMA_InitTypeDef DMA_InitStructure;
 	
 			RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
 			RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
-	
+	/*
+			RCC->APB2ENR |= 1<<4;    	//enable PORT clock 	
+			GPIOA->PUPDR &= 0xFF00FFFF;		
+			GPIOA->PUPDR |= 0x00830000; 
+			GPIOA->IDR |= 1<<5; 		//PA5 pull-up, output
+	*/
 			GPIO_InitStructure.GPIO_Pin = (GPIO_Pin_2/*TX, PA2*/ | GPIO_Pin_3/*RX, PA3*/);
 			GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;       
 			GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -206,23 +171,23 @@ void BT_Usart2_Config(uint32_t rate, uint32_t addr, uint8_t leng)
 			GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_7);
 			GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_7);
 	
-			USART_InitStructure.USART_BaudRate = rate;
-			USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-			USART_InitStructure.USART_StopBits = USART_StopBits_1;
-			USART_InitStructure.USART_Parity = USART_Parity_No;
-			USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-			USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+			BT_USART2.USART_BaudRate = rate; //baud rate my hc-05 supported. //
+			BT_USART2.USART_WordLength = USART_WordLength_8b; //
+			BT_USART2.USART_StopBits = USART_StopBits_1; //
+			BT_USART2.USART_Parity = USART_Parity_No; //
+			BT_USART2.USART_HardwareFlowControl = USART_HardwareFlowControl_None; //
+			BT_USART2.USART_Mode = USART_Mode_Rx | USART_Mode_Tx; //
 			USART_DeInit(USART2);
-			USART_Init(USART2, &USART_InitStructure);
-			USART_Cmd(USART2, ENABLE);
+			USART_Init(USART2, &BT_USART2); //
+			USART_Cmd(USART2, ENABLE); //
 
 			RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1,ENABLE);
 			DMA_StructInit(&DMA_InitStructure);
 			DMA_DeInit(DMA1_Channel7); 
-			DMA_InitStructure.DMA_PeripheralBaseAddr =  (uint32_t)USART2 + 0x28;		//////
-			DMA_InitStructure.DMA_MemoryBaseAddr = (u32)&addr;
+			DMA_InitStructure.DMA_PeripheralBaseAddr =  (uint32_t)USART2 + 0x30;
+			DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)USART2 + 0x60;
 			DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-			DMA_InitStructure.DMA_BufferSize = leng;
+			DMA_InitStructure.DMA_BufferSize = 0x60;
 			DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;		//address register is incremented or not
 			DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
 			DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord ;
@@ -235,7 +200,5 @@ void BT_Usart2_Config(uint32_t rate, uint32_t addr, uint8_t leng)
 			USART_ClearFlag(USART2,USART_FLAG_TC);
 			DMA_ClearFlag(DMA1_FLAG_TC7);
 			USART_DMACmd(USART2,USART_DMAReq_Tx,ENABLE);
-			DMA_Cmd(DMA1_Channel7,ENABLE);
-			Lamp_CatchSignal(2,1); 
-			while (!DMA_GetFlagStatus(USART_FLAG_TC)){};
+			DMA_Cmd(DMA1_Channel7,ENABLE)
 }

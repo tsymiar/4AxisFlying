@@ -52,7 +52,8 @@ extern __IO uint8_t PrevXferComplete;
 /* Private function prototypes -----------------------------------------------*/
 static void IntToUnicode (uint32_t value , uint8_t *pbuf , uint8_t len);
 /* Private functions ---------------------------------------------------------*/
-extern void Lamp_CatchSignal(int color, int state);
+extern void Lamp_CatchSignal(u8 color, u8 state);
+extern Delay(__IO uint32_t nTime);
 /**
   * @brief  Configures Main system clocks & power.
   * @param  None
@@ -301,8 +302,8 @@ void Joystick_Send(uint8_t Keys, USART_TypeDef * USARTn)
 			//Here is my own function which was written to config USART2 and send data to serial port
 			USART_ClearFlag(USART2,USART_FLAG_TC);		//clear bit zone to aviod missing the primacy. 
 			USART_SendData(USARTn, Keys);
-			Lamp_CatchSignal(2,1);									//which lamp blinks.
-			//Delay(5);
+			Lamp_CatchSignal(Green, LED_ON);									//which lamp blinks.
+			Delay(5);
 }
 
 /**

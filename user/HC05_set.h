@@ -1,12 +1,11 @@
-#ifndef __HC05_DEBUG_H
-#define __HC05_DEBUG_H
+#ifndef __HC05_SET_H
+#define __HC05_SET_H
 
-#include "common_functions.h"
+#include "func_utils.h"
 
-#define BITBAND(addr, bitnum) ((addr & 0xF0000000)+0x2000000+((addr &0xFFFFF)<<5)+(bitnum<<2)) 
-#define MEM_ADDR(addr)  *((volatile unsigned long  *)(addr)) 
-#define BIT_ADDR(addr, bitnum)   MEM_ADDR(BITBAND(addr, bitnum)) 
-#define HC05_LED  	BIT_ADDR(GPIOC_BASE+8,5)		
-#define HC05_KEY  	BIT_ADDR(GPIOC_BASE+12,4)		
+u8 HC05_Init(void);
+u8 HC05_Get_Role(void);
+u8 HC05_Set_Cmd(u8* atstr);
+void HC05_debug(u8 *str);
 
-#endif /* __HC_05_H */
+#endif /* __HC05_SET_H */

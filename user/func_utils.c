@@ -1,8 +1,8 @@
-#include "common_functions.h"
+#include "func_utils.h"
 
 #define L3G_Sensitivity_250dps     (float)   114.285f         /*!< gyroscope sensitivity with 250 dps full scale [LSB/dps] */
 #define L3G_Sensitivity_500dps     (float)    57.1429f        /*!< gyroscope sensitivity with 500 dps full scale [LSB/dps] */
-#define L3G_Sensitivity_2000dps    (float)    14.285f	      /*!< gyroscope sensitivity with 2000 dps full scale [LSB/dps] */
+#define L3G_Sensitivity_2000dps    (float)    14.285f	        /*!< gyroscope sensitivity with 2000 dps full scale [LSB/dps] */
 
 #define LSM_Acc_Sensitivity_2g     (float)     1.0f            /*!< accelerometer sensitivity with 2 g full scale [LSB/mg] */
 #define LSM_Acc_Sensitivity_4g     (float)     0.5f            /*!< accelerometer sensitivity with 4 g full scale [LSB/mg] */
@@ -12,6 +12,74 @@
 __IO uint32_t TimingDelay = 0;
 __IO uint8_t PrevXferComplete = 1;
 __IO uint32_t USBConnectTimeOut = 100;
+__IO u8 TX_BUF[256];
+
+#if 1
+#pragma import(__use_no_semihosting)             
+//necssary functions standard library needed.
+struct __FILE 
+{ 
+	int handle; 
+	/* Whatever you require here. If the only file you are using is */ 
+	/* standard output using printf() for debugging, no file handling */ 
+	/* is required. */ 
+}; 
+/* FILE is typedefo d in stdio.h. */ 
+FILE __stdout;       
+//define function _sys_exit() to avert half-host mode.
+void _sys_exit(int x) 
+{ 
+	x = x; 
+} 
+#endif
+
+#ifdef  USE_FULL_ASSERT
+
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t* file, uint32_t line)
+{ 
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+
+  /* Infinite loop */
+  while (1)
+  {
+  }
+}
+#endif
+
+/**
+  * @brief  serial port 2, Override function printf.
+  * @param  fmt,...ensure every time data sent in length of 200.
+  * @retval None
+  */
+void u2_printf(char* fmt,...)  
+{  
+	va_list ap;
+	va_start(ap,fmt);
+	vsprintf((char*)TX_BUF,fmt,ap);
+	va_end(ap);
+	while(DMA1_Channel7->CNDTR!=0);	//waiting if channel 7 finished transportion.   
+	DMA_Config(DMA1_Channel7, (uint32_t)TX_BUF, strlen((const char*)TX_BUF)); 	//via DMA.
+}
+
+/**
+		*@brief:Override fputc function.
+		*@param:ch, data would be written to the register; f, a point to its buffer.
+		*@retval: data have written
+		*/
+int fputc(int ch, FILE *f)
+{      
+	while((USART2/*USART1, and below*/->ISR/*Interrupt and status register*/&0x40)==0);	//loop sending to the end.   
+	USART2->TDR/*USART Transmit Data register*/ = (u8) ch;      
+	return ch;
+}
 
 /**
   * @brief  Inserts a delay time.
@@ -36,72 +104,6 @@ void TimingDelay_Decrement(void)
   { 
     TimingDelay--;
   }
-}
-
-/**
-		*@brief:Override fputc function.
-		*@param:ch, data would be written to the register; f, a point to its buffer.
-		*@retval: data have written
-		*/
-int fputc(int ch, FILE *f)
-{      
-	while((USART2/*USART1, and below*/->ISR/*Interrupt and status register*/&0x40)==0);	//loop sending to the end.   
-	USART2->TDR/*USART Transmit Data register*/ = (u8) ch;      
-	return ch;
-}
-
-void Lamp_CatchSignal(int color, int state)
-{
-	GPIO_InitTypeDef  GPIO_InitStructure;
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
-	
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOE, &GPIO_InitStructure);
-	
- switch(color)
-	{
-		case 1:
-					GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
-					if(state==0)
-						GPIOE->BRR = GPIO_Pin_9;
-					else 
-						GPIOE->BSRR = GPIO_Pin_9;
-					break;
-		case 2:
-					GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-					if(state==0)
-						GPIOE->BRR = GPIO_Pin_10;
-					else 
-						GPIOE->BSRR = GPIO_Pin_10;
-					break;
-		case 3:
-					GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
-					if(state==0)
-						GPIOE->BRR = GPIO_Pin_11;
-					else 
-						GPIOE->BSRR = GPIO_Pin_11;
-					break;
-		case 4:
-					GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
-					if(state==0)
-						GPIOE->BRR = GPIO_Pin_12;
-					else 
-						GPIOE->BSRR = GPIO_Pin_12;
-					break;
-		default:
-					break;
-	}
-	 while(1)
-  {
-  }
-}
-
-void Error_Handler()
-{
-	Lamp_CatchSignal(1,1);
 }
 
 /**
@@ -157,7 +159,7 @@ void My_USBConfig(void)
   Set_USBClock();
   USB_Interrupts_Config();
   
-  USB_Init();
+  // USB_Init();
 
   while ((bDeviceState != CONFIGURED)&&(USBConnectTimeOut != 0))
   {}
@@ -447,24 +449,3 @@ uint32_t L3GD20_TIMEOUT_UserCallback(void)
 {
   return 0;
 }
-
-#ifdef  USE_FULL_ASSERT
-
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(uint8_t* file, uint32_t line)
-{ 
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-
-  /* Infinite loop */
-  while (1)
-  {
-  }
-}
-#endif
