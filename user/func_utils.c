@@ -158,7 +158,7 @@ void My_USBConfig(void)
   Set_System();
   Set_USBClock();
   USB_Interrupts_Config();
-  
+  // TODO USB custom Design
   // USB_Init();
 
   while ((bDeviceState != CONFIGURED)&&(USBConnectTimeOut != 0))

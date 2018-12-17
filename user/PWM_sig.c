@@ -1,4 +1,4 @@
-#include "PWM_set.h"
+#include "PWM_sig.h"
 
 void PWM_Set(int moto1, int moto2, int moto3, int moto4)
 {

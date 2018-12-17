@@ -200,5 +200,5 @@ void BT_Usart2_Config(uint32_t rate)
 			USART_ClearFlag(USART2,USART_FLAG_TC);
 			DMA_ClearFlag(DMA1_FLAG_TC7);
 			USART_DMACmd(USART2,USART_DMAReq_Tx,ENABLE);
-			DMA_Cmd(DMA1_Channel7,ENABLE)
+			DMA_Cmd(DMA1_Channel7,ENABLE);
 }
