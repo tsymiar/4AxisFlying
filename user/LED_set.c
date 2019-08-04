@@ -1,7 +1,6 @@
-#include "custom_function.h"
+#include "LED_set.h"
 
 /* Private variables ---------------------------------------------------------*/
-  RCC_ClocksTypeDef RCC_Clocks;
 __IO float HeadingValue = 0.0f;  
 
 			/*campass*/						/*acceleration*/				/*gyroscope*/
@@ -28,12 +27,8 @@ const struct LED_COLOR leds_color[] = {
 };
 
 /* Public functions ---------------------------------------------------------*/
-void Init_User_Config()
-{
- /* SysTick end of count event each 10ms */
-  RCC_GetClocksFreq(&RCC_Clocks);
-  SysTick_Config(RCC_Clocks.HCLK_Frequency / 100);
-  
+void LED_Init()
+{  
   /* Initialize LEDs and User Button available on STM32F3-Discovery board */
   STM_EVAL_LEDInit(LED3);
   STM_EVAL_LEDInit(LED4);
@@ -45,9 +40,6 @@ void Init_User_Config()
   STM_EVAL_LEDInit(LED10);
   
   STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_EXTI); 
-
-  /* Configure the USB */
-  My_USBConfig();
 }
 
 void LEDs_Off()
@@ -63,7 +55,7 @@ void LEDs_Off()
     STM_EVAL_LEDOff(LED5); 
 }
 
-void LEDs_Blink(Led_TypeDef LED)
+void LEDx_Blink(Led_TypeDef LED)
 {
 		LEDs_Off();
     STM_EVAL_LEDOn(LED);
@@ -87,35 +79,35 @@ void MarqueeToggle()
     /* Toggle LD3 */
       STM_EVAL_LEDToggle(LED3);
       /* Insert 50 ms delay */
-      Delay(5);
+      Delay_us(5);
       /* Toggle LD5 */
       STM_EVAL_LEDToggle(LED5);
       /* Insert 50 ms delay */
-      Delay(5);
+      Delay_us(5);
       /* Toggle LD7 */
       STM_EVAL_LEDToggle(LED7);
       /* Insert 50 ms delay */
-      Delay(5);
+      Delay_us(5);
       /* Toggle LD9 */
       STM_EVAL_LEDToggle(LED9);
       /* Insert 50 ms delay */
-      Delay(5);
+      Delay_us(5);
       /* Toggle LD10 */
       STM_EVAL_LEDToggle(LED10);
       /* Insert 50 ms delay */
-      Delay(5);
+      Delay_us(5);
       /* Toggle LD8 */
       STM_EVAL_LEDToggle(LED8);
       /* Insert 50 ms delay */
-      Delay(5); 
+      Delay_us(5); 
       /* Toggle LD6 */
       STM_EVAL_LEDToggle(LED6);
       /* Insert 50 ms delay */
-      Delay(5);
+      Delay_us(5);
       /* Toggle LD4 */
       STM_EVAL_LEDToggle(LED4);
       /* Insert 50 ms delay */
-      Delay(5);
+      Delay_us(5);
 }
 
 void GyroToggle(float* gyroVal)
@@ -245,91 +237,45 @@ void CompassToggle()
       {
         if (((HeadingValue < 25.0f)&&(HeadingValue >= 0.0f))||((HeadingValue >=340.0f)&&(HeadingValue <= 360.0f)))
         {
-					LEDs_Blink(LED10);
+					LEDx_Blink(LED10);
         }
         else  if ((HeadingValue <70.0f)&&(HeadingValue >= 25.0f))
         {
-					LEDs_Blink(LED9);
+					LEDx_Blink(LED9);
         } 
         else  if ((HeadingValue < 115.0f)&&(HeadingValue >= 70.0f))
         {
-					LEDs_Blink(LED7);
+					LEDx_Blink(LED7);
         }
         else  if ((HeadingValue <160.0f)&&(HeadingValue >= 115.0f))
         {
-					LEDs_Blink(LED5);
+					LEDx_Blink(LED5);
         } 
         else  if ((HeadingValue <205.0f)&&(HeadingValue >= 160.0f))
         {
-					LEDs_Blink(LED3);
+					LEDx_Blink(LED3);
         } 
         else  if ((HeadingValue <250.0f)&&(HeadingValue >= 205.0f))
         {
-					LEDs_Blink(LED4);
+					LEDx_Blink(LED4);
         } 
         else  if ((HeadingValue < 295.0f)&&(HeadingValue >= 250.0f))
         {
-					LEDs_Blink(LED6);
+					LEDx_Blink(LED6);
         }        
         else  if ((HeadingValue < 340.0f)&&(HeadingValue >= 295.0f))
         {
-					LEDs_Blink(LED8);
+					LEDx_Blink(LED8);
         }
       }
       else
       {
         /* Delay 50ms */
-        Delay(5);
+        Delay_us(5);
       }
 }
 
-void Lamp_CatchSignal(u8 color, u8 state)
+void LED_Error_Handler()
 {
-	GPIO_InitTypeDef  GPIO_InitStructure;
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
-	
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOE, &GPIO_InitStructure);
-	
- switch(color)
-	{
-		case Red:
-					GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
-					if(state==LED_OFF)
-						GPIOE->BRR = GPIO_Pin_9;
-					else 
-						GPIOE->BSRR = GPIO_Pin_9;
-					break;
-		case Orange:
-					GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-					if(state==LED_OFF)
-						GPIOE->BRR = GPIO_Pin_10;
-					else 
-						GPIOE->BSRR = GPIO_Pin_10;
-					break;
-		case Green:
-					GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
-					if(state==LED_OFF)
-						GPIOE->BRR = GPIO_Pin_11;
-					else 
-						GPIOE->BSRR = GPIO_Pin_11;
-					break;
-		case Blue:
-					GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
-					if(state==LED_OFF)
-						GPIOE->BRR = GPIO_Pin_12;
-					else 
-						GPIOE->BSRR = GPIO_Pin_12;
-					break;
-		default:
-					break;
-	}
-}
-
-void Error_Handler()
-{
-	Lamp_CatchSignal(Red, LED_ON);
+	LED_CatchSignal(Red, LED_ON);
 }

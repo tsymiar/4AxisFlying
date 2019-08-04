@@ -42,6 +42,7 @@
 extern __IO uint32_t UserButtonPressed;
 extern __IO uint8_t DataReady;
 extern __IO uint32_t USBConnectTimeOut;
+extern uint32_t MaxUserSwitchAllow;
 extern void TimingDelay_Decrement(void);
 __IO uint32_t i =0;
 
@@ -176,7 +177,7 @@ void EXTI0_IRQHandler(void)
     for(i=0; i<0x7FFFF; i++);
     UserButtonPressed++;
     
-    if (UserButtonPressed > 0x2)
+    if (UserButtonPressed > MaxUserSwitchAllow)
     {
       UserButtonPressed = 0x0;
     }

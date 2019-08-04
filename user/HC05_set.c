@@ -9,7 +9,7 @@
 u16 RX_STA = 0;
 u8  RX_BUF[256];
 void BT_Usart2_Config(uint32_t rate);
-extern void Lamp_CatchSignal(u8 color, u8 state);
+extern void LED_CatchSignal(u8 color, u8 state);
 
 /*GPIOA, USART2, DMA1, Channel7, PA4-TX, PA5-RX*/
 
@@ -21,14 +21,14 @@ u8 HC05_Init(void)
 	while(retry--)
 	{
 		HC05_KEY=1;					//set KEY high to enable AT mode.
-		Delay(10);
-		u2_printf("AT\r\n");		//send AT test command.
+		Delay_us(10);
+		u2printf("AT\r\n");		//send AT test command.
 		HC05_KEY=0;					//pull down KEY pin to exit AT mode.
 		for(t=0;t<10;t++) 			//wait 50ms at langest to recieve response form HC-05. 
 		{
 			if(RX_STA&0x8000)
 			break;
-			Delay(5);
+			Delay_us(5);
 		}		
 		if(RX_STA&0x8000)	//has recived data for once.
 		{
@@ -57,11 +57,11 @@ u8 HC05_Get_Role(void)
 	while(retry--)
 	{
 		HC05_KEY=1;					//set KEY pin heigh, enable AT mode.
-		Delay(10);
-		u2_printf("AT+ROLE?\r\n");	//checkout the module role.
+		Delay_us(10);
+		u2printf("AT+ROLE?\r\n");	//checkout the module role.
 		for(t=0;t<20;t++) 			//wait for at longest 200ms, to get responses of HC05
 		{
-			Delay(10);
+			Delay_us(10);
 			if(RX_STA&0x8000)
 			break;
 		}		
@@ -93,13 +93,13 @@ u8 HC05_Set_Cmd(u8* atstr)
 	while(retry--)
 	{
 		HC05_KEY=1;
-		Delay(10);
-		u2_printf("BT:%x\r\n",atstr);
+		Delay_us(10);
+		u2printf("BT:%x\r\n",atstr);
 		HC05_KEY=0;
 		for(t=0;t<20;t++)
 		{
 			if(RX_STA&0x8000)break;
-			Delay(5);
+			Delay_us(5);
 		}		
 		if(RX_STA&0x8000)
 		{
@@ -121,17 +121,17 @@ u8 HC05_Set_Cmd(u8* atstr)
 	* @param  str, command string(<ENTER> is unnecessary).
   * @retval none
   */
-void HC05_debug(u8 *str)
+void HC05_Debug(u8 *str)
 {					  
 	u8 temp;
 	u8 t;		  
 	HC05_KEY=1;
-	Delay(10);
-	u2_printf("%s\r\n",(char*)str);
+	Delay_us(10);
+	u2printf("%s\r\n",(char*)str);
 	for(t=0;t<50;t++)
 	{
 		if(RX_STA&0X8000)break;
-		Delay(10);
+		Delay_us(10);
 	}									    
 	HC05_KEY=0;
 	if(RX_STA&0X8000)
@@ -168,10 +168,9 @@ void BT_Usart2_Config(uint32_t rate)
 			GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 			GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 			GPIO_Init(GPIOA, &GPIO_InitStructure);
-			GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_7);
-			GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_7);
+			GPIO_PinAFConfig(GPIOA, GPIO_PinSource5, GPIO_AF_7);
 	
-			BT_USART2.USART_BaudRate = rate; //baud rate my hc-05 supported. //
+			BT_USART2.USART_BaudRate = rate; //baud rate hc-05 supported. //
 			BT_USART2.USART_WordLength = USART_WordLength_8b; //
 			BT_USART2.USART_StopBits = USART_StopBits_1; //
 			BT_USART2.USART_Parity = USART_Parity_No; //

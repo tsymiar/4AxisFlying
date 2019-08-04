@@ -52,8 +52,6 @@ extern __IO uint8_t PrevXferComplete;
 /* Private function prototypes -----------------------------------------------*/
 static void IntToUnicode (uint32_t value , uint8_t *pbuf , uint8_t len);
 /* Private functions ---------------------------------------------------------*/
-extern void Lamp_CatchSignal(u8 color, u8 state);
-extern Delay(__IO uint32_t nTime);
 /**
   * @brief  Configures Main system clocks & power.
   * @param  None
@@ -283,27 +281,54 @@ void USB_Cable_Config (FunctionalState NewState)
 }
 
 /**
-  * @brief  Decodes the Joystick direction, get commands from Joystick.
-  * @param  None
-  * @retval The direction value.
+  * @brief  Set LED clolor to show state signal.
+  * @param  color, state
+  * @retval None.
   */
-uint8_t JoyState(void)
+void LED_CatchSignal(u8 color, u8 state)
 {
-  return 0;
-}
-
-/**
-  * @brief  Prepares buffer to be sent containing Joystick event infos, send data read from sensors to Joystick(HC-05).
-  * @param  Keys: keys received from terminal.
-  * @retval None
-  */
-void Joystick_Send(uint8_t Keys, USART_TypeDef * USARTn)
-{
-			//Here is my own function which was written to config USART2 and send data to serial port
-			USART_ClearFlag(USART2,USART_FLAG_TC);		//clear bit zone to aviod missing the primacy. 
-			USART_SendData(USARTn, Keys);
-			Lamp_CatchSignal(Green, LED_ON);									//which lamp blinks.
-			Delay(5);
+	GPIO_InitTypeDef  GPIO_InitStructure;
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
+	
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init(GPIOE, &GPIO_InitStructure);
+	
+ switch(color)
+	{
+		case Red:
+					GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+					if(state==LED_OFF)
+						GPIOE->BRR = GPIO_Pin_9;
+					else 
+						GPIOE->BSRR = GPIO_Pin_9;
+					break;
+		case Orange:
+					GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
+					if(state==LED_OFF)
+						GPIOE->BRR = GPIO_Pin_10;
+					else 
+						GPIOE->BSRR = GPIO_Pin_10;
+					break;
+		case Green:
+					GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
+					if(state==LED_OFF)
+						GPIOE->BRR = GPIO_Pin_11;
+					else 
+						GPIOE->BSRR = GPIO_Pin_11;
+					break;
+		case Blue:
+					GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
+					if(state==LED_OFF)
+						GPIOE->BRR = GPIO_Pin_12;
+					else 
+						GPIOE->BSRR = GPIO_Pin_12;
+					break;
+		default:
+					break;
+	}
 }
 
 /**

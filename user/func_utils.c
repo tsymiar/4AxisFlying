@@ -8,11 +8,16 @@
 #define LSM_Acc_Sensitivity_4g     (float)     0.5f            /*!< accelerometer sensitivity with 4 g full scale [LSB/mg] */
 #define LSM_Acc_Sensitivity_8g     (float)     0.25f           /*!< accelerometer sensitivity with 8 g full scale [LSB/mg] */
 #define LSM_Acc_Sensitivity_16g    (float)     0.0834f         /*!< accelerometer sensitivity with 12 g full scale [LSB/mg] */
+	
+#define ITM_PORT8(n)         (*(volatile unsigned char *)(0xe0000000 + 4*(n)))
+#define ITM_PORT16(n)        (*(volatile unsigned short *)(0xe0000000 + 4*(n)))
+#define ITM_PORT32(n)        (*(volatile unsigned long *)(0xe0000000 + 4*(n)))
+#define DEMCR                (*(volatile unsigned long *)(0xE000EDFC))
+#define TRCENA               0X01000000
 
-__IO uint32_t TimingDelay = 0;
-__IO uint8_t PrevXferComplete = 1;
-__IO uint32_t USBConnectTimeOut = 100;
-__IO u8 TX_BUF[256];
+#define countof(a)   (sizeof(a) / sizeof(*(a)))
+#define TxBufferSize   (countof(TxBuffer) - 1)
+#define RxBufferSize   0x20
 
 #if 1
 #pragma import(__use_no_semihosting)             
@@ -33,6 +38,18 @@ void _sys_exit(int x)
 } 
 #endif
 
+__IO uint32_t TimingDelay = 0;
+__IO uint8_t PrevXferComplete = 1;
+__IO uint32_t USBConnectTimeOut = 100;
+
+__IO u8 TxBuffer[] = "\n\rUSART Hyperterminal Interrupts Example: USART-Hyperterminal communication using Interrupt\n\r";
+__IO u8 RxBuffer[RxBufferSize];
+u8 TxCounter = 0; 
+u16 RxCounter = 0;
+
+void UART1_Configuration(void);
+void DMA_Config(DMA_Channel_TypeDef* DMA_CHx, uint32_t Addr, u8 len);
+
 #ifdef  USE_FULL_ASSERT
 
 /**
@@ -46,7 +63,7 @@ void assert_failed(uint8_t* file, uint32_t line)
 { 
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-
+  printf("Wrong parameters value: file %s on line %d\r\n", file, line);
   /* Infinite loop */
   while (1)
   {
@@ -55,18 +72,18 @@ void assert_failed(uint8_t* file, uint32_t line)
 #endif
 
 /**
-  * @brief  serial port 2, Override function printf.
+  * @brief  Override function printf.
   * @param  fmt,...ensure every time data sent in length of 200.
   * @retval None
   */
-void u2_printf(char* fmt,...)  
+void u2printf(char* fmt,...)  
 {  
 	va_list ap;
 	va_start(ap,fmt);
-	vsprintf((char*)TX_BUF,fmt,ap);
+	vsprintf((char*)TxBuffer,fmt,ap);
 	va_end(ap);
 	while(DMA1_Channel7->CNDTR!=0);	//waiting if channel 7 finished transportion.   
-	DMA_Config(DMA1_Channel7, (uint32_t)TX_BUF, strlen((const char*)TX_BUF)); 	//via DMA.
+	DMA_Config(DMA1_Channel7, (uint32_t)TxBuffer, strlen((const char*)TxBuffer)); 	//via DMA.
 }
 
 /**
@@ -75,35 +92,88 @@ void u2_printf(char* fmt,...)
 		*@retval: data have written
 		*/
 int fputc(int ch, FILE *f)
-{      
-	while((USART2/*USART1, and below*/->ISR/*Interrupt and status register*/&0x40)==0);	//loop sending to the end.   
-	USART2->TDR/*USART Transmit Data register*/ = (u8) ch;      
-	return ch;
-}
-
-/**
-  * @brief  Inserts a delay time.
-  * @param  nTime: specifies the delay time length, in 10 ms.
-  * @retval None
-  */
-void Delay(__IO uint32_t nTime)
 {
-  TimingDelay = nTime;
-
-  while(TimingDelay != 0);
-}
-
-/**
-  * @brief  Decrements the TimingDelay variable.
-  * @param  None
-  * @retval None
-  */
-void TimingDelay_Decrement(void)
-{
-  if (TimingDelay != 0x00)
-  { 
-    TimingDelay--;
+  USART1->TDR = (u8) ch;
+  while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET) {}
+/*
+  if(DEMCR & TRCENA)
+  {
+      while(ITM_PORT32(0) == 0);                                                                                                                                                                                                                                                                                      
+      ITM_PORT8(0) = ch;
   }
+*/
+//	while((USART1/*or USART2*/->ISR/*Interrupt and status register*/&0x40)==0);	//loop sending to the end.   
+//	USART1->TDR/*USART Transmit Data register*/ = (u8) ch;      
+	return (ch);
+}
+
+int fgetc(FILE *f)
+{
+	while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET);
+	return (int)USART_ReceiveData(USART1);
+}
+
+void System_Clock_Config(){
+	 /* SysTick end of count event each 10ms */
+  RCC_ClocksTypeDef RCC_Clocks;
+  RCC_GetClocksFreq(&RCC_Clocks);
+  SysTick_Config(RCC_Clocks.HCLK_Frequency / 100);
+}
+
+void USART1_IRQHandler(void)
+{
+  if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
+  {
+    /* Read one byte from the receive data register */
+    RxBuffer[RxCounter++] = (USART_ReceiveData(USART1) & 0x7F);
+   if(RxCounter == RxBufferSize)
+    {
+      /* Disable the USART Receive interrupt */
+          RxCounter = 0;
+      //USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
+    }
+  }
+ 
+  if(USART_GetITStatus(USART1, USART_IT_TXE) != RESET)
+  {   
+    /* Write one byte to the transmit data register */
+    USART_SendData(USART1, TxBuffer[TxCounter++]);                    
+ 
+   if(TxCounter == TxBufferSize)
+    {
+      /* Disable the USART1 Transmit interrupt */
+      USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
+    }    
+  }           
+}
+
+void UART1_Config(void)
+{
+	USART_InitTypeDef USART_InitStructure;
+	USART_ClockInitTypeDef  USART_ClockInitStructure;
+	
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1 |RCC_APB2Periph_USART1, ENABLE);
+	
+	USART_ClockInitStructure.USART_Clock = USART_Clock_Disable;
+	USART_ClockInitStructure.USART_CPOL = USART_CPOL_Low;
+	USART_ClockInitStructure.USART_CPHA = USART_CPHA_2Edge;
+	USART_ClockInitStructure.USART_LastBit = USART_LastBit_Disable;
+	/* Configure the USART1 synchronous paramters */
+	USART_ClockInit(USART1, &USART_ClockInitStructure);
+ 
+	USART_InitStructure.USART_BaudRate = 115200;
+	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+	USART_InitStructure.USART_StopBits = USART_StopBits_1;
+	USART_InitStructure.USART_Parity = USART_Parity_No ;
+	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+	
+	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+	
+	/* Configure USART1 basic and asynchronous paramters */
+	USART_Init(USART1, &USART_InitStructure);
+	USART_ITConfig(USART1,USART_IT_RXNE, ENABLE);
+	USART_DMACmd(USART1,USART_DMAReq_Rx,ENABLE);
+	USART_Cmd(USART1, ENABLE);
 }
 
 /**
@@ -142,27 +212,48 @@ void TimingDelay_Decrement(void)
 	DMA_Cmd(DMA_CHx, ENABLE);
 	/*make DMA interrupt if finished sending*/
 	DMA_ITConfig(DMA_CHx, DMA_IT_TC, ENABLE);
-}			
-			/**
-  * @}
-  */
-
+}
 
 /**
   * @brief  Configure the USB.
   * @param  None
   * @retval None
   */
-void My_USBConfig(void)
+void USB_Config(void)
 {
   Set_System();
   Set_USBClock();
   USB_Interrupts_Config();
-  // TODO USB custom Design
+  // TODO Custom USB Design
   // USB_Init();
 
   while ((bDeviceState != CONFIGURED)&&(USBConnectTimeOut != 0))
   {}
+}
+
+/**
+  * @brief  Decrements the TimingDelay variable.
+  * @param  None
+  * @retval None
+  */
+void TimingDelay_Decrement(void)
+{
+  if (TimingDelay != 0x00)
+  { 
+    TimingDelay--;
+  }
+}
+
+/**
+  * @brief  Inserts a delay time.
+  * @param  nTime: specifies the delay time length, in 10 ms.
+  * @retval None
+  */
+void Delay_us(__IO uint32_t nTime)
+{
+  TimingDelay = nTime;
+	SysTick->CTRL |=  SysTick_CTRL_ENABLE_Msk;
+  while(TimingDelay != 0);
 }
 
 /**

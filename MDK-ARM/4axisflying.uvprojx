@@ -363,7 +363,7 @@
             <useXO>0</useXO>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_STDPERIPH_DRIVER,STM32F30X,ARM_MATH_CM4,__FPU_PRESENT=1,__FPU_USED =1,USE_FULL_ASSERT</Define>
+              <Define>USE_STDPERIPH_DRIVER,STM32F30X,ARM_MATH_CM4,__FPU_PRESENT=1,__FPU_USED =1,USE_FULL_ASSERT,DEBUG_ENABLE_SEMIHOST</Define>
               <Undefine></Undefine>
               <IncludePath>..\Discovery;..\System;..\Drivers\inc;..\USB;..\user</IncludePath>
             </VariousControls>
@@ -380,7 +380,7 @@
             <useXO>0</useXO>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define></Define>
+              <Define>DEBUG_ENABLE_SEMIHOST</Define>
               <Undefine></Undefine>
               <IncludePath></IncludePath>
             </VariousControls>
@@ -644,9 +644,9 @@
               <FilePath>..\user\math_clac.c</FilePath>
             </File>
             <File>
-              <FileName>custom_function.c</FileName>
+              <FileName>LED_set.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\user\custom_function.c</FilePath>
+              <FilePath>..\user\LED_set.c</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>

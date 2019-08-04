@@ -54,10 +54,8 @@ void Enter_LowPowerMode(void);
 void Leave_LowPowerMode(void);
 void USB_Interrupts_Config(void);
 void USB_Cable_Config (FunctionalState NewState);
-void Joystick_Send(uint8_t Keys, USART_TypeDef * USARTn);
 void Get_SerialNum(void);
-uint8_t JoyState(void);
-
+void LED_CatchSignal(u8 color, u8 state);
 
 #endif  /*__HW_CONFIG_H*/
 

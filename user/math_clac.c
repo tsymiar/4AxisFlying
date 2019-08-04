@@ -33,7 +33,7 @@ float PID_Pitch_Kp, PID_Pitch_Ki, PID_Pitch_Kd, PID_Roll_Kp, PID_Roll_Ki, PID_Ro
 */
 float radpers = PI / 180;
 
-extern void Lamp_CatchSignal(u8 color, u8 state);
+extern void LED_CatchSignal(u8 color, u8 state);
 /**
   * @brief  To fix the sensor data after I finished installing perpheral.
 	* @param  Here may be, not complete.
@@ -176,17 +176,17 @@ void PID_Ctrl(const float Expe_Pitch, const float Expe_Roll, const float Expe_Ya
 	//---if dip angle out of expect, don't take action.
 	if (fabs(G_Attitude_Error.error_Pitch) >= 55 || fabs(G_Attitude_Error.error_Roll) >= 55)
 	{
-		Lamp_CatchSignal(Blue, LED_ON);				//toggle a blue signal lamp
+		LED_CatchSignal(Blue, LED_ON);				//toggle a blue signal lamp
 		PWM_Set(0, 0, 0, 0);   								//power down
 		return;
 	}
-	Lamp_CatchSignal(Blue, LED_OFF);				//lamp off
+	LED_CatchSignal(Blue, LED_OFF);				//lamp off
 	
 	//---stable pilot lamp, yellow.if the angle do not bigger than 3бу, charge as stable on the whole, LED on.
 	if (fabs(G_Attitude_Error.error_Pitch) <= 3 && fabs(G_Attitude_Error.error_Roll) <= 3)
-		Lamp_CatchSignal(Blue, LED_ON);
+		LED_CatchSignal(Blue, LED_ON);
 	else
-		Lamp_CatchSignal(Blue, LED_OFF);
+		LED_CatchSignal(Blue, LED_OFF);
 	
 	//---calculate integral, error limiting.
 	if (fabs(G_Attitude_Error.error_Pitch) <= Pitch_I_Min)			//---when the attitude error value smaller than 20бу, immit integral control.

@@ -3,14 +3,15 @@
 
 #include "comm_include"
 
-void u2_printf(char* fmt,...);
+void u2printf(char* fmt,...);
 int fputc(int ch, FILE *f);
-void TimingDelay_Decrement(void);
-void Delay(__IO uint32_t nTime);
-void Joystick_Send(uint8_t Keys, USART_TypeDef * USARTn);
-void DMA_Config(DMA_Channel_TypeDef* DMA_CHx, uint32_t Addr, u8 len);
 
-void My_USBConfig(void);
+void System_Clock_Config(void);
+void UART1_Config(void);
+void USB_Config(void);
+void TimingDelay_Decrement(void);
+void Delay_us(__IO uint32_t nTime);
+
 void My_GyroConfig(void);
 void My_CompassConfig(void);
 void My_GyroReadAngRate(float* pfData);

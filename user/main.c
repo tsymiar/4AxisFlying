@@ -30,10 +30,13 @@
 
 __IO uint32_t UserButtonPressed = 0;
 __IO uint8_t DataReady = 0;
-
-/* Private variables ---------------------------------------------------------*/
+const uint32_t MaxUserSwitchAllow = 0x3;
+Led_TypeDef LED;
 float gyroVal[3] = {0.0f};
 u8  MAIN_BUF[32];
+/* Private variables ---------------------------------------------------------*/
+int ijk = 0;
+
 
 /**
   * @brief  Main program.
@@ -41,8 +44,13 @@ u8  MAIN_BUF[32];
   * @retval None
   */
 int main(void)
-{  
-  Init_User_Config();
+{
+	System_Clock_Config();
+  /* Configure */
+	UART1_Config();
+  USB_Config();
+	/* Initial */
+  LED_Init();
    
   /* Reset UserButton_Pressed variable */
   UserButtonPressed = 0x00; 
@@ -69,7 +77,6 @@ int main(void)
     /* Waiting User Button is pressed */
     while (UserButtonPressed == 0x01)
     {
-			Lamp_CatchSignal(Orange, LED_ON);
       /* Wait for data ready */
       while(DataReady != 0x05)
       {}
@@ -83,7 +90,6 @@ int main(void)
 			if (gyroVal[2]!=0)
 			{
 					sprintf((char*)MAIN_BUF, "Zval=%f\t", (float)gyroVal[2]);
-					HC05_Set_Cmd(MAIN_BUF);
 			}
     }
         
@@ -98,12 +104,50 @@ int main(void)
     /* Waiting User Button is pressed */
     while (UserButtonPressed == 0x02)
     {
-			Lamp_CatchSignal(Orange, LED_ON);
       /* Wait for data ready */
       while(DataReady !=0x05)
       {}
       DataReady = 0x00;
 			CompassToggle();
-		} 
+		}
+
+    /* user test */
+    DataReady = 0x00;
+    LEDs_Off();
+	  ESP8266_Init(115200);
+		LED = (Led_TypeDef) ESP8266_Test();
+		while (UserButtonPressed == 0x03)
+    {      
+			/* Wait for data ready */
+      while(DataReady != 0x05)
+      {}
+      DataReady = 0x00;
+		  LEDx_Blink(LED);
+		}
+		
+		DataReady = 0x00;
+    LEDs_Off();
+		while (UserButtonPressed == 0x03)
+    {      
+			/* Wait for data ready */
+      while(DataReady != 0x05)
+      {}
+      DataReady = 0x00;
+		  LEDx_Blink(LED);
+		}
+		
+		DataReady = 0x00;
+    LEDs_Off();
+	  ESP8266_Init(115200);
+		LED = (Led_TypeDef) ESP8266_Test();
+		while (UserButtonPressed == 0x03)
+    {      
+			LED_CatchSignal(Blue, LED_ON);
+			/* Wait for data ready */
+      while(DataReady != 0x05)
+      {}
+      DataReady = 0x00;
+		  LEDx_Blink(LED);
+		}
   }
 }
