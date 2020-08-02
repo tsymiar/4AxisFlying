@@ -2,4 +2,5 @@ MDK-ARM/Objects/*
 Target*
 *.TMP
 *.lst
+*.DS_Store
 MDK-ARM/Packs_Target.htm
