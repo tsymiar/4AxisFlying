@@ -30,6 +30,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f30x_it.h"
 #include "usb_istr.h"
+#include "main.h"
 
 /** @addtogroup STM32F3-Discovery_Demo
   * @{
@@ -177,7 +178,7 @@ void EXTI0_IRQHandler(void)
     for(i=0; i<0x7FFFF; i++);
     UserButtonPressed++;
     
-    if (UserButtonPressed > MaxUserSwitchAllow)
+    if (UserButtonPressed > 0x2)
     {
       UserButtonPressed = 0x0;
     }
@@ -189,31 +190,23 @@ void EXTI0_IRQHandler(void)
 
 #if defined (USB_INT_DEFAULT)
 void USB_LP_CAN1_RX0_IRQHandler(void)
-{
-   USB_Istr();
-}
 #elif defined (USB_INT_REMAP)
 void USB_LP_IRQHandler(void)
+#endif
 {
    USB_Istr();
 }
-#endif
 
 #if defined (USB_INT_DEFAULT)
 void USBWakeUp_IRQHandler(void)
-{
-  /* Initiate external resume sequence (1 step) */
-  Resume(RESUME_EXTERNAL);  
-  EXTI_ClearITPendingBit(EXTI_Line18);
-}
 #elif defined (USB_INT_REMAP)
 void USBWakeUp_RMP_IRQHandler(void)
+#endif
 {
   /* Initiate external resume sequence (1 step) */
   Resume(RESUME_EXTERNAL);  
   EXTI_ClearITPendingBit(EXTI_Line18);
 }
-#endif
 /**
   * @brief  This function handles PPP interrupt request.
   * @param  None
